@@ -66,7 +66,7 @@ class RunSummary:
 
 class HumanUI:
     def __init__(self, enabled: bool = True):
-        self.enabled = bool(enabled) and _isatty()
+        self.enabled = bool(enabled)
         self.t0 = time.time()
 
     def header(self, h: RunHeader) -> None:

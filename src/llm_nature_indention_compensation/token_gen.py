@@ -115,7 +115,7 @@ def _score_indent_full_seq(
         scores[i] = lp
 
     return scores
-def generate_with_indent_constraints(prompt: str, model, tokenizer, cfg: GenConfig) -> Tuple[str, Optional[str]]:
+def generate_with_indent_constraints(prompt: str, model, tokenizer, cfg: GenConfig, on_event=None) -> Tuple[str, Optional[str]]:
     """
     Generation WITHOUT KV-cache stepping.
     Reason: transformers==5.0.0 DynamicCache single-step with past_key_values can crash (Bus error: 10)
@@ -143,6 +143,9 @@ def generate_with_indent_constraints(prompt: str, model, tokenizer, cfg: GenConf
         return out.logits[0, -1].detach().float().cpu().numpy()
 
     for _ in range(int(cfg.max_new_tokens)):
+        if on_event is not None:
+            on_event({'type': 'progress', 'frac': float(_ + 1) / float(max(1, int(cfg.max_new_tokens)))})
+
         # If we have forced indent tokens, append them verbatim (no sampling)
         if forced:
             tid = int(forced.pop(0))
@@ -191,6 +194,14 @@ def generate_with_indent_constraints(prompt: str, model, tokenizer, cfg: GenConf
                     indent_widths=indent_widths,
                 )
 
+            all_scores = _score_indent_first_token(
+                logits=nxt_logits,
+                indent_map=indent_map,
+                allowed_widths=indent_widths,
+                indent_widths=indent_widths,
+            )
+            llm_pref_idx = int(np.argmax(all_scores)) if all_scores.size else 0
+            llm_pref_width = int(indent_widths[llm_pref_idx]) if indent_widths else 0
             chosen = sample_indent_width_from_scores(
                 indent_widths=indent_widths,
                 scores=scores,
@@ -198,6 +209,15 @@ def generate_with_indent_constraints(prompt: str, model, tokenizer, cfg: GenConf
                 temperature=1.0,
                 rng=rng,
             )
+            depth = max(0, len(controller.indent_stack) - 1)
+            if (llm_pref_width != int(chosen)) and (on_event is not None):
+                on_event({
+                    'type': 'compensation',
+                    'depth': int(depth),
+                    'llm_spaces': int(llm_pref_width),
+                    'chosen_spaces': int(chosen),
+                    'reason': 'matching scope rules',
+                })
 
             controller.update_stack(int(chosen))
             forced = list(indent_map.indent_to_ids[int(chosen)])
