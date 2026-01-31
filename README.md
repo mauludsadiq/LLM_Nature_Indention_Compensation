@@ -210,3 +210,43 @@ python -m llm_nature_indention_compensation.evaluate       --model gpt2       --
 . .venv/bin/activate
 sh scripts/run_demo.sh
 ```
+
+Universal Indentation Kernel (Logit Middleware)
+===============================================
+
+This repo now supports two integration modes:
+
+1) Token-loop generator (repo-native)
+------------------------------------
+
+Uses a custom token loop and an indent stack to intervene only at newline boundaries, plus a compiler-guided repair loop.
+
+Known-good run:
+
+  export HF_HUB_DISABLE_TELEMETRY=1 TOKENIZERS_PARALLELISM=false OMP_NUM_THREADS=1 MKL_NUM_THREADS=1
+  rm -rf out/run_demo
+  python -m llm_nature_indention_compensation.run --prompt $'def stress_test():\n    """Nested if/for/with. Must return 0."""\n    ' --model gpt2 --device cpu --max-new-tokens 192 --temperature 0.2 --top-p 0.95 --seed 0 --indent-delta 4 --max-depth 20 --indent-score full --out out/run_demo
+  python -m llm_nature_indention_compensation.verify out/run_demo
+  cat out/run_demo/PASS.txt
+  cat out/run_demo/compile_status.json
+
+2) Hugging Face LogitsProcessor (universal middleware)
+------------------------------------------------------
+
+UniversalIndentKernel is a model-agnostic logit interceptor that enforces indentation tokens at newline boundaries when representable by the tokenizer.
+
+Run:
+
+  rm -rf out/hf_demo
+  python -m llm_nature_indention_compensation.hf_demo --model gpt2 --device cpu --max-new-tokens 160 --temperature 0.2 --top-p 0.95 --seed 0 --indent-delta 4 --max-depth 20 --out out/hf_demo --prompt $'def stress_test():\n    """Nested if/for/with. Must return 0."""\n    '
+
+Human-centric output
+====================
+
+The default CLI now prints a progressive disclosure story in a TTY:
+
+- progress bar
+- compensation events (LLM drift vs kernel correction)
+- success/failure summary
+
+Use --ui json for machine logs.

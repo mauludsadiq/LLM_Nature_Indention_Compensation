@@ -1,0 +1,25 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "IndentKernel: run demo",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "export HF_HUB_DISABLE_TELEMETRY=1 TOKENIZERS_PARALLELISM=false OMP_NUM_THREADS=1 MKL_NUM_THREADS=1; rm -rf out/run_demo; python -m llm_nature_indention_compensation.run --prompt $'def stress_test():\\n    \"\"\"Nested if/for/with. Must return 0.\"\"\"\\n    ' --model gpt2 --device cpu --max-new-tokens 192 --temperature 0.2 --top-p 0.95 --seed 0 --indent-delta 4 --max-depth 20 --indent-score full --out out/run_demo; python -m llm_nature_indention_compensation.verify out/run_demo; cat out/run_demo/PASS.txt; cat out/run_demo/compile_status.json"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "IndentKernel: hf demo",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "export HF_HUB_DISABLE_TELEMETRY=1 TOKENIZERS_PARALLELISM=false OMP_NUM_THREADS=1 MKL_NUM_THREADS=1; rm -rf out/hf_demo; python -m llm_nature_indention_compensation.hf_demo --model gpt2 --device cpu --max-new-tokens 160 --temperature 0.2 --top-p 0.95 --seed 0 --indent-delta 4 --max-depth 20 --out out/hf_demo --prompt $'def stress_test():\\n    \"\"\"Nested if/for/with. Must return 0.\"\"\"\\n    '"
+      ],
+      "problemMatcher": []
+    }
+  ]
+}

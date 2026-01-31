@@ -9,6 +9,8 @@ from typing import Any, Dict
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
+from .ui import HumanUI, RunHeader, RunSummary
+
 from .hashing import sha256_text, sha256_canonical_json
 from .token_gen import GenConfig, generate_with_indent_constraints
 
@@ -36,6 +38,8 @@ def main() -> int:
     ap.add_argument("--max-depth", type=int, default=20)
     ap.add_argument("--indent-score", type=str, default="first", choices=["first", "full"])
     ap.add_argument("--out", type=str, default="out/run")
+    ap.add_argument("--ui", type=str, default="human", choices=["human", "json"])
+    ap.add_argument("--prefetch", action="store_true")
     args = ap.parse_args()
 
     out = Path(args.out)
