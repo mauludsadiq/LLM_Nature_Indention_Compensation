@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import traceback
 from dataclasses import asdict
 from pathlib import Path
 from typing import Any, Dict
@@ -62,14 +61,7 @@ def main() -> int:
         indent_score=args.indent_score,
     )
 
-    try:
-        code, compile_err = generate_with_indent_constraints(args.prompt, mdl, tok, cfg)
-    except Exception as e:
-        (out_dir / "compile_status.json").write_text(json.dumps({"compile_ok": False, "compile_error": str(e)}, indent=2) + "\n", encoding="utf-8")
-        (out_dir / "PASS.txt").write_text("PASS_INDENT_COMPILE=0\n", encoding="utf-8")
-        print(traceback.format_exc())
-        return 2
-
+    code, compile_err = generate_with_indent_constraints(args.prompt, mdl, tok, cfg)
 
     _write_text(out / "generated.py", code)
 
